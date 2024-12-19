@@ -157,7 +157,7 @@ def decrypt_text(encrypted_text, key):
 
 def leer_settings():
     lineas = None
-    archivo = "C:\LOG\settings.ini"
+    archivo = "credenciales.enc"
     with open(archivo, "r") as file:
         lineas = file.readlines()
     return lineas
