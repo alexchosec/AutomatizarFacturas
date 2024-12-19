@@ -26,7 +26,6 @@ from utiles.common import leer_settings
 logger = setup_logging()
 
 # Credenciales 
-userGps = "aaviles"
 email = ""
 patronAPM = r"https://portal\.efacturacion\.pe/visorComprobante/sat/vista/descarga\.jsf\?code=[\w/]+"
 
@@ -61,6 +60,10 @@ if address_entry.Type == "EX":  # Si es un usuario de Exchange
 else:
     email = address_entry.Address
 
+logger.info(email)
+
+email = email.split('@')[0]
+email = "aaviles"
 
 logger.info(f"Carpeta principal: {inbox.Name}")
 
@@ -133,7 +136,7 @@ try:
                     logger.info(f"Archivo zip eliminado: {ruta_archivo_outlook_subdirectorio_archivo}")
  
                     # Enviar archivo API
-                    responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_outlook_subdirectorio_archivo_zip)   
+                    responseXml = upload_xml(urlApi, iniciarSesionResponse.token, email, ruta_archivo_outlook_subdirectorio_archivo_zip)   
     
                     # Opcional: eliminar el archivo zip después de enviarlo
                     os.remove(ruta_archivo_outlook_subdirectorio_archivo_zip)
@@ -153,7 +156,7 @@ try:
                 logger.info(f"Archivo ZIP guardado en: {ruta_archivo_zip}")
                     
                 # Enviar archivo API
-                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
+                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, email, ruta_archivo_zip)   
 
                 # Opcional: eliminar el archivo zip después de enviarlo
                 os.remove(ruta_archivo_zip)
@@ -184,7 +187,7 @@ try:
                 logger.info(f"Archivo ZIP guardado en: {ruta_archivo_zip}")
                    
                 # Enviar archivo API
-                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
+                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, email, ruta_archivo_zip)   
 
                 # Opcional: eliminar el archivo zip después de enviarlo
                 os.remove(ruta_archivo_zip)
@@ -232,7 +235,7 @@ try:
                 logger.info(f"Archivo original eliminado: {ruta_archivo_outlook}")
                    
             # Enviar archivo API
-            responseFile = upload_file(urlApi, iniciarSesionResponse.token, userGps, DocumentoID, isZip, ruta_archivo_zip)   
+            responseFile = upload_file(urlApi, iniciarSesionResponse.token, email, DocumentoID, isZip, ruta_archivo_zip)   
 
             if not responseFile.respuesta:                    
                 logger.error(f"Error al subir : {attachment.Filename} : {responseFile.mensaje}")
@@ -260,7 +263,7 @@ try:
             logger.info(f"Archivo PDF eliminado: {ruta_archivo_pdf}")
 
             # Enviar archivo API
-            responseFile = upload_file(urlApi, iniciarSesionResponse.token, userGps, DocumentoID, "", ruta_archivo_zip)   
+            responseFile = upload_file(urlApi, iniciarSesionResponse.token, email, DocumentoID, "", ruta_archivo_zip)   
 
             # Opcional: eliminar el archivo zip después de enviarlo
             os.remove(ruta_archivo_zip)
