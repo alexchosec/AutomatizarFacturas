@@ -4,7 +4,7 @@ import os
 import shutil
 import re
 
-from log_config import setup_logging
+from utiles.log_config import setup_logging
 from clases.IniciarSesionRequest import IniciarSesionRequest
 from clases.ResponseGenericBE import ResponseGenericBE
 from utiles.api import token_api
@@ -16,15 +16,33 @@ from utiles.common import descomprimir_zip
 from utiles.common import guardar_archivo_outlook
 from utiles.common import extraer_todos_archivos_unSoloDirectorio
 from utiles.common import descargar_archivo_web
+from utiles.common import load_key
+from utiles.common import generate_key
+from utiles.common import encrypt_text
+from utiles.common import decrypt_text
+from utiles.common import leer_settings
+
 
 logger = setup_logging()
 
 # Credenciales 
-username = "achosec@msc-peru.net"
-password = "Prueba$1"
 userGps = "aaviles"
 email = ""
 patronAPM = r"https://portal\.efacturacion\.pe/visorComprobante/sat/vista/descarga\.jsf\?code=[\w/]+"
+
+# Generar la clave (solo la primera vez)
+# generate_key()
+
+# Cargar la clave desde el archivo
+key = load_key()
+
+# Obtener ajustes
+lineas = leer_settings()
+
+# Obtener variables
+username = decrypt_text(lineas[0], key) 
+password = decrypt_text(lineas[1], key)
+urlApi = decrypt_text(lineas[2], key)
 
 # Conectar con la aplicación de Outlook
 outlook = win32com.client.Dispatch("Outlook.Application")
@@ -66,7 +84,7 @@ if len(unread_messages) == 0:
     exit()
 
 iniciarSesionRequest = IniciarSesionRequest(username, password)
-iniciarSesionResponse = token_api(iniciarSesionRequest)
+iniciarSesionResponse = token_api(urlApi, iniciarSesionRequest)
 
 if iniciarSesionResponse is None or iniciarSesionResponse.token == "":
     logger.info("Token no disponible")
@@ -115,7 +133,7 @@ try:
                     logger.info(f"Archivo zip eliminado: {ruta_archivo_outlook_subdirectorio_archivo}")
  
                     # Enviar archivo API
-                    responseXml = upload_xml(iniciarSesionResponse.token, userGps, ruta_archivo_outlook_subdirectorio_archivo_zip)   
+                    responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_outlook_subdirectorio_archivo_zip)   
     
                     # Opcional: eliminar el archivo zip después de enviarlo
                     os.remove(ruta_archivo_outlook_subdirectorio_archivo_zip)
@@ -135,7 +153,7 @@ try:
                 logger.info(f"Archivo ZIP guardado en: {ruta_archivo_zip}")
                     
                 # Enviar archivo API
-                responseXml = upload_xml(iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
+                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
 
                 # Opcional: eliminar el archivo zip después de enviarlo
                 os.remove(ruta_archivo_zip)
@@ -166,7 +184,7 @@ try:
                 logger.info(f"Archivo ZIP guardado en: {ruta_archivo_zip}")
                    
                 # Enviar archivo API
-                responseXml = upload_xml(iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
+                responseXml = upload_xml(urlApi, iniciarSesionResponse.token, userGps, ruta_archivo_zip)   
 
                 # Opcional: eliminar el archivo zip después de enviarlo
                 os.remove(ruta_archivo_zip)
@@ -214,7 +232,7 @@ try:
                 logger.info(f"Archivo original eliminado: {ruta_archivo_outlook}")
                    
             # Enviar archivo API
-            responseFile = upload_file(iniciarSesionResponse.token, userGps, DocumentoID, isZip, ruta_archivo_zip)   
+            responseFile = upload_file(urlApi, iniciarSesionResponse.token, userGps, DocumentoID, isZip, ruta_archivo_zip)   
 
             if not responseFile.respuesta:                    
                 logger.error(f"Error al subir : {attachment.Filename} : {responseFile.mensaje}")
@@ -242,7 +260,7 @@ try:
             logger.info(f"Archivo PDF eliminado: {ruta_archivo_pdf}")
 
             # Enviar archivo API
-            responseFile = upload_file(iniciarSesionResponse.token, userGps, DocumentoID, "", ruta_archivo_zip)   
+            responseFile = upload_file(urlApi, iniciarSesionResponse.token, userGps, DocumentoID, "", ruta_archivo_zip)   
 
             # Opcional: eliminar el archivo zip después de enviarlo
             os.remove(ruta_archivo_zip)
