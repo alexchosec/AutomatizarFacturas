@@ -2,8 +2,10 @@ import requests
 import json
 import os
 
+from typing import Union, List
 from clases.IniciarSesionResponse import IniciarSesionResponse
 from clases.ResponseGenericBE import ResponseGenericBE
+from clases.NotificacionRequest import NotificacionRequest
 
 def token_api(url_api, request):
     response = None
@@ -38,74 +40,107 @@ def token_api(url_api, request):
     return response
 
 
-
-def upload_xml(url_api, token, user, file_path):
-    response = None
-    try:
-        headers = {
-            "Usuario": user,
-            "Authorization": f"Bearer {token}"
-        }
-
-        with open(file_path, 'rb') as file:
-
-            files = {'file': (os.path.basename(file_path), file, 'application/octet-stream')}
-            
-            respuesta = requests.post(f"{url_api}/api/Comprobante/SubirXml", headers=headers, files=files)
-            
-            if respuesta.status_code == 200:
-
-                data = respuesta.json()
-                
-                response = ResponseGenericBE(
-                    respuesta=data['respuesta'],
-                    mensaje=data['mensaje'],
-                    param1=data['param1'],
-                    param2=data['param2']
-                )
-                
-            else:
-                response = ResponseGenericBE(f"Error al subir el archivo. Código de respuesta: {respuesta.status_code}", False)
-
-    except Exception as ex:        
-        response = ResponseGenericBE(f"Ocurrió un error al intentar subir el archivo: {ex}", False)
- 
-    return response
-
-
-
-def upload_file(url_api, token, user, id, isZip, file_path):
-    response = None
+def upload_file(url_api, token, user, file_path):
+    response = ""
     try:
         
         headers = {
-            "Usuario": user,
-            "DocumentoID": f"{id}",
-            "EstaComprimido": isZip,
+            "User": user,
             "Authorization": f"Bearer {token}"
         }
 
         with open(file_path, 'rb') as file:
             
-            files = {'file': (os.path.basename(file_path), file, 'application/octet-stream')}
+            files = {'file': (os.path.basename(file_path), file, 'application/zip')}
             
-            respuesta = requests.post(f"{url_api}/api/Comprobante/SubirArchivo", headers=headers, files=files)
+            respuesta = requests.post(f"{url_api}/api/FacturaProveedor/SubirArchivo", headers=headers, files=files)
             
             if respuesta.status_code == 200:
+                response = "OK"
+            else:     
+                try:
+                    response = respuesta.json()  
+                except ValueError:
+                    response = respuesta.text 
 
-                data = respuesta.json()
-                
-                response = ResponseGenericBE(
-                    respuesta=data['respuesta'],
-                    mensaje=data['mensaje'],
-                    param1=data['param1'],
-                    param2=data['param2']
-                )
-                
-            else:
-                response = ResponseGenericBE(f"Error al subir el archivo. Código de respuesta: {respuesta.status_code}", False)
+    except Exception as e:        
+        response = str(e)  
 
-    except Exception as ex:        
-        response = ResponseGenericBE(f"Ocurrió un error al intentar subir el archivo: {ex}", False)
- 
     return response
+
+
+def notificar_errores(url_api: str, token: str, user: str, request: Union['NotificacionRequest', List['NotificacionRequest'], dict]):
+    """
+    Envía notificaciones de errores a una API.
+
+    Args:
+        url_api (str): La URL base de la API a la que se enviarán las notificaciones.
+        token (str): Token de autenticación necesario para la autorización en la API.
+        user (str): El nombre del usuario al que se le notificará el error.
+        request (NotificacionRequest | List[NotificacionRequest] | dict): 
+            Un objeto `NotificacionRequest`, una lista de objetos `NotificacionRequest`, 
+            o un diccionario con los datos a enviar. Si es un diccionario, debe seguir el formato 
+            esperado por la API.
+
+    Raises:
+        ValueError: Si el argumento `request` no es del tipo esperado.
+    """
+    try:
+
+        # Verificar si request es una lista de NotificacionRequest
+        if isinstance(request, list):
+
+            # Convertir toda la lista de objetos NotificacionRequest en diccionarios
+            request_data = [req.to_dict() for req in request if isinstance(req, NotificacionRequest)]
+            
+            # Asegurarse de que todos los elementos sean NotificacionRequest
+            if len(request_data) != len(request):
+                raise ValueError("Todos los elementos de la lista deben ser instancias de NotificacionRequest.")
+            
+            enviar_notificacion(url_api, token, user, request_data)
+
+        # Verificar si request es una instancia de NotificacionRequest
+        elif isinstance(request, NotificacionRequest):
+            request_data = [request.to_dict()]  # Crear una lista con un solo diccionario
+            enviar_notificacion(url_api, token, user, request_data)
+
+        # Verificar si request es un diccionario
+        elif isinstance(request, dict):
+            request_data = [request]  # Crear una lista con un solo diccionario
+            enviar_notificacion(url_api, token, user, request_data)
+
+        else:
+            raise ValueError("El argumento 'request' debe ser una instancia de NotificacionRequest, una lista de NotificacionRequest, o un diccionario.")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error en la solicitud API: {e}")
+    except ValueError as e:
+        print(f"Error de valor: {e}")
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+
+def enviar_notificacion(url_api: str, token: str, user: str, request_data: List[dict]):
+    """Envía la solicitud POST a la API con una lista de notificaciones."""
+    try:
+
+        headers = {
+            "Content-Type": "application/json",  
+            "Authorization": f"Bearer {token}",
+            "user": user,
+        }
+
+        url = f"{url_api}/api/FacturaProveedor/NotificarError"
+        respuesta = requests.post(url, json=request_data, headers=headers)
+
+        if respuesta.status_code == 200:
+            print("Las notificaciones se registraron correctamente.")
+        else:
+            print(f"Error al notificar errores. Código de estado: {respuesta.status_code}")
+            try:
+                detalles = respuesta.json()
+                print(f"Detalles del error: {detalles}")
+            except ValueError:
+                print(f"Detalles del error: {respuesta.text}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error en la solicitud API: {e}")
