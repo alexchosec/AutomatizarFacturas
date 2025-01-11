@@ -81,8 +81,8 @@ messages = subfolder.Items
 logger.info(f"Cantidad de correos en '{subfolder.Name}': {len(messages)}")
 
 # Filtrar los correos no leídos
-# unread_messages = [msg for msg in messages if msg.UnRead]
-unread_messages = [msg for msg in messages if msg.Class == 43 and msg.UnRead]
+unread_messages = [msg for msg in messages if msg.UnRead]
+# unread_messages = [msg for msg in messages if msg.Class == 43 and msg.UnRead]
 
 if len(unread_messages) == 0:    
     logger.info(f"No se encontraron correos no leídos '{subfolder.Name}")
