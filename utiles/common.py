@@ -132,15 +132,19 @@ def extraer_todos_archivos_unSoloDirectorio(zip_path):
 
 
 # Función para generar una clave (solo se genera una vez)
-def generate_key():
+def generate_key(): 
     key = Fernet.generate_key()
-    with open("key.key", "wb") as key_file:
+    script_dir = os.path.dirname(os.path.abspath(__file__))  
+    key_path = os.path.join(script_dir, "key.key")
+    with open(key_path, "wb") as key_file:
         key_file.write(key)
     print("Clave generada y guardada en 'key.key'.")
 
 # Función para cargar la clave
 def load_key():
-    with open("key.key", "rb") as key_file:
+    script_dir = os.path.dirname(os.path.abspath(__file__))  
+    key_path = os.path.join(script_dir, "key.key") 
+    with open(key_path, "rb") as key_file:
         return key_file.read()
 
 # Función para encriptar texto
@@ -157,8 +161,13 @@ def decrypt_text(encrypted_text, key):
 
 def leer_settings():
     lineas = None
-    archivo = "credenciales.enc"
-    with open(archivo, "r") as file:
+
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))  
+    key_path = os.path.join(script_dir, "credenciales.enc") 
+
+    # archivo = "credenciales.enc"
+    with open(key_path, "r") as file:
         lineas = file.readlines()
     return lineas
 

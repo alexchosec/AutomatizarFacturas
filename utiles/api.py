@@ -45,7 +45,7 @@ def upload_file(url_api, token, user, file_path):
     try:
         
         headers = {
-            "User": user,
+            "Usarname": user,
             "Authorization": f"Bearer {token}"
         }
 
@@ -126,7 +126,7 @@ def enviar_notificacion(url_api: str, token: str, user: str, request_data: List[
         headers = {
             "Content-Type": "application/json",  
             "Authorization": f"Bearer {token}",
-            "user": user,
+            "Usarname": user,
         }
 
         url = f"{url_api}/api/FacturaProveedor/NotificarError"
