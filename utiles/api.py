@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import mimetypes
 
 from typing import Union, List
 from clases.IniciarSesionResponse import IniciarSesionResponse
@@ -39,21 +40,61 @@ def token_api(url_api, request):
 
     return response
 
+def save_email(url_api, token, request):
+    response = None
+    try:
+        
+        request_data = request.to_dict()
 
-def upload_file(url_api, token, user, file_path):
+        json_data = json.dumps(request_data)
+
+        headers = {
+            'Content-Type': 'application/json',
+            "Authorization": f"Bearer {token}"
+        }
+
+        url = f"{url_api}/api/FacturaProveedor/CorreoRecibidoRegistrar"
+        
+        respuesta = requests.post(url, data=json_data, headers=headers)
+
+        if respuesta.status_code == 200:
+            
+            response = str(respuesta.json())  
+
+        else:
+            
+            response = f"Error al registrar correo: {respuesta.status_code} - {respuesta.text}"
+
+    except Exception as e:
+        response = f"Error en la solicitud API: {e}"
+
+    return response
+
+
+
+def upload_file(url_api, token, file_path, id_email, unzip):
     response = ""
     try:
         
         headers = {
-            "Usarname": user,
-            "Authorization": f"Bearer {token}"
+            "IdCorreo": id_email,
+            "Authorization": f"Bearer {token}",
+            "Descomprimir": unzip
         }
 
+        if not os.path.exists(file_path):
+            logger.error(f"Archivo no encontrado: {file_path}")
+            return "Archivo no encontrado"
+
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type is None:
+            mime_type = 'application/octet-stream'  
+            
         with open(file_path, 'rb') as file:
             
-            files = {'file': (os.path.basename(file_path), file, 'application/zip')}
-            
-            respuesta = requests.post(f"{url_api}/api/FacturaProveedor/SubirArchivo", headers=headers, files=files)
+            files = {'file': (os.path.basename(file_path), file, mime_type)}
+
+            respuesta = requests.post(f"{url_api}/api/FacturaProveedor/CorreoRecibidoArchivoRegistrar", headers=headers, files=files)
             
             if respuesta.status_code == 200:
                 response = "OK"
@@ -67,6 +108,7 @@ def upload_file(url_api, token, user, file_path):
         response = str(e)  
 
     return response
+
 
 
 def notificar_errores(url_api: str, token: str, user: str, request: Union['NotificacionRequest', List['NotificacionRequest'], dict]):

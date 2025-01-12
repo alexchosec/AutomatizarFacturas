@@ -21,11 +21,11 @@ def generar_nombre_unico(ruta):
 
 def comprimir_file(path_file):
     
-    temp_dir = tempfile.mkdtemp()    
+    dir_file = os.path.dirname(path_file)
     nombre_archivo = os.path.splitext(os.path.basename(path_file))[0]
 
-    zip_filename = os.path.join(temp_dir, f"{nombre_archivo}.zip")
-    zip_filename = generar_nombre_unico(zip_filename)
+    zip_filename = os.path.join(dir_file, f"{nombre_archivo}.zip")
+    zip_filename = generar_nombre_unico(zip_filename)  
 
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(path_file, os.path.basename(path_file))  
@@ -170,4 +170,13 @@ def leer_settings():
     with open(key_path, "r") as file:
         lineas = file.readlines()
     return lineas
+
+def is_numeric(value):
+    try:
+        # Intentamos convertir la respuesta a float
+        float(value)  # Para permitir decimales y números negativos
+        return True
+    except ValueError:
+        # Si no es posible convertirla, no es numérico
+        return False
 
