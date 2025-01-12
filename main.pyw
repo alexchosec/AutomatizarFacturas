@@ -21,6 +21,7 @@ from utiles.common import generate_key
 from utiles.common import decrypt_text
 from utiles.common import leer_settings
 from utiles.common import is_numeric
+from utiles.common import es_imagen_firma
 
 
 logger = setup_logging()
@@ -134,7 +135,11 @@ try:
             logger.info(f"Correo guardado: {message.Subject}")
 
         for attachment in message.Attachments:
-                                       
+
+            if es_imagen_firma(attachment):
+                logger.info(f"Imagen de firma detectada: {attachment.FileName}. No se subirá.")
+                continue 
+    
             temp_dir = tempfile.mkdtemp()
 
             file_path = os.path.join(temp_dir, attachment.FileName)

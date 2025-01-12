@@ -180,3 +180,15 @@ def is_numeric(value):
         # Si no es posible convertirla, no es numérico
         return False
 
+def es_imagen_firma(attachment):
+    # Filtrar imágenes de firma según el nombre
+    firma_keywords = ["firma", "signature", "img", "profile"]
+    # Verificar si el nombre del archivo contiene palabras clave
+    if any(keyword in attachment.FileName.lower() for keyword in firma_keywords):
+        return True
+    
+    # Además, puedes comprobar el tipo MIME para imágenes en línea (por ejemplo, si tiene un "cid:" en el nombre del archivo)
+    if attachment.PropertyAccessor.GetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001F"):
+        return True
+    
+    return False
