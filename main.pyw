@@ -5,14 +5,17 @@ import shutil
 import re
 import time
 
-from utiles.log_config import setup_logging
 from clases.IniciarSesionRequest import IniciarSesionRequest
 from clases.CorreoRecibidoRequest import CorreoRecibidoRequest
 from clases.NotificacionRequest import NotificacionRequest
 from clases.ResponseGenericBE import ResponseGenericBE
+from clases.CorreoActualizarRequest import CorreoActualizarRequest
+
+from utiles.log_config import setup_logging
 from utiles.api import token_api
 from utiles.api import upload_file
 from utiles.api import save_email
+from utiles.api import update_email
 from utiles.api import notificar_errores
 
 from utiles.common import comprimir_file
@@ -119,20 +122,21 @@ try:
     
     for i, message in enumerate(unread_messages, 0):
 
-        message.UnRead = False
 
         remitente_correo = message.SenderEmailAddress  
         if message.SenderEmailType == "EX":
             remitente_correo = message.Sender.GetExchangeUser().PrimarySmtpAddress
 
         correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, cuerpoMensaje=message.Body, usuario=email)
-        respuesta = save_email(urlApi, iniciarSesionResponse.token, correoRecibidoRequest)
+        respuestaGuardar = save_email(urlApi, iniciarSesionResponse.token, correoRecibidoRequest)
 
-        if not is_numeric(respuesta):
-            notificaciones.append(NotificacionRequest(asunto=message.Subject, mensaje=respuesta))            
+        if not is_numeric(respuestaGuardar):
+            notificaciones.append(NotificacionRequest(asunto=message.Subject, mensaje=respuestaGuardar))            
             continue
         else:
             logger.info(f"Correo guardado: {message.Subject}")
+
+        idCorreo = int(respuestaGuardar) 
 
         for attachment in message.Attachments:
 
@@ -157,7 +161,7 @@ try:
                 descomprimir = "SI"
                 file_zip = comprimir_file(file_path)
 
-            respuestaAdjunto = upload_file(urlApi, iniciarSesionResponse.token, file_zip, respuesta, descomprimir)
+            respuestaAdjunto = upload_file(urlApi, iniciarSesionResponse.token, file_zip, idCorreo, descomprimir)
             if respuestaAdjunto != "OK":
                 notificaciones.append(NotificacionRequest(asunto=message.Subject, mensaje=respuestaAdjunto))
                 logger.error(f"Error subiendo el archivo: {file_path}")
@@ -166,7 +170,18 @@ try:
 
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
+            
 
+        correoActualizarRequest = CorreoActualizarRequest(id=idCorreo)
+        respuestaActualizacion = update_email(urlApi, iniciarSesionResponse.token, correoActualizarRequest)
+        if respuestaActualizacion == "OK":            
+            logger.info(f"Se registro correctamente el correo: {message.Subject}")   
+        else:
+            notificaciones.append(NotificacionRequest(asunto=message.Subject, mensaje=respuestaActualizacion))
+            logger.error(f"Error actualizando el correo: {message.Subject}")
+        
+        message.UnRead = False
+            
     if len(notificaciones) > 0:
         notificar_errores(urlApi, iniciarSesionResponse.token, email, notificaciones)
 

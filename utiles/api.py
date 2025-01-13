@@ -71,13 +71,41 @@ def save_email(url_api, token, request):
     return response
 
 
+def update_email(url_api, token, request):
+    response = None
+    try:
+        
+        request_data = request.to_dict()
+
+        json_data = json.dumps(request_data)
+
+        headers = {
+            'Content-Type': 'application/json',
+            "Authorization": f"Bearer {token}"
+        }
+
+        url = f"{url_api}/api/FacturaProveedor/CorreoRecibidoActualizar"        
+        respuesta = requests.post(url, data=json_data, headers=headers)
+
+        if respuesta.status_code == 200:           
+            response = "OK" 
+        else:           
+            response = f"Error al registrar correo: {respuesta.status_code} - {respuesta.text}"
+
+    except Exception as e:
+        response = f"Error en la solicitud API: {e}"
+
+    return response
+
+
+
 
 def upload_file(url_api, token, file_path, id_email, unzip):
     response = ""
     try:
         
         headers = {
-            "IdCorreo": id_email,
+            "IdCorreo": str(id_email),
             "Authorization": f"Bearer {token}",
             "Descomprimir": unzip
         }
