@@ -121,13 +121,18 @@ try:
     
     for i, message in enumerate(unread_messages, 0):
 
+        if message.FlagStatus == 2: 
+            logger.info(f"Correo ya procesado: {message.Subject}")
+            continue
+
+        
 
         remitente_correo = message.SenderEmailAddress  
         if message.SenderEmailType == "EX":
             remitente_correo = message.Sender.GetExchangeUser().PrimarySmtpAddress
 
         
-        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, cuerpoMensaje="", usuario=email)
+        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, usuario=email)
         respuestaGuardar = save_email(urlApi, iniciarSesionResponse.token, correoRecibidoRequest)
 
         if not is_numeric(respuestaGuardar):
@@ -189,13 +194,24 @@ try:
             shutil.rmtree(temp_dir)     
 
         message.UnRead = False
+        message.FlagStatus = 2  
+        message.Save()
+
+        time.sleep(1)  # Dar un pequeño tiempo para la sincronización
+
+        # Verificar el estado del mensaje
+        if not message.UnRead:
+            logger.info(f"Correo marcado como leído: {message.Subject}")
+        else:
+            logger.warning(f"El correo no se marcó como leído: {message.Subject}")
             
     if len(notificaciones) > 0:
         notificar_errores(urlApi, iniciarSesionResponse.token, email, notificaciones)
 
- 
+
     logger.info(f"Fin del proceso...")   
     time.sleep(5)
+
 
 except Exception as e:
     logger.error(f"Error: {e}")
