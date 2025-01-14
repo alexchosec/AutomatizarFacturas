@@ -32,7 +32,6 @@ logger = setup_logging()
 
 # Credenciales 
 email = ""
-patronAPM = r"https://portal\.efacturacion\.pe/visorComprobante/sat/vista/descarga\.jsf\?code=[\w/]+"
 
 # Generar la clave (solo la primera vez)
 # generate_key()
@@ -47,7 +46,7 @@ lineas = leer_settings()
 username = decrypt_text(lineas[0], key) 
 password = decrypt_text(lineas[1], key)
 urlApi = decrypt_text(lineas[2], key)
-urlApi = "http://localhost:5194"
+# urlApi = "http://localhost:5194"
 
 # Conectar con la aplicación de Outlook
 outlook = win32com.client.Dispatch("Outlook.Application")
@@ -127,7 +126,8 @@ try:
         if message.SenderEmailType == "EX":
             remitente_correo = message.Sender.GetExchangeUser().PrimarySmtpAddress
 
-        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, cuerpoMensaje=message.Body, usuario=email)
+        
+        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, cuerpoMensaje="", usuario=email)
         respuestaGuardar = save_email(urlApi, iniciarSesionResponse.token, correoRecibidoRequest)
 
         if not is_numeric(respuestaGuardar):
@@ -171,20 +171,30 @@ try:
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
             
+        
+        temp_dir = tempfile.mkdtemp()
+        file_txt = os.path.join(temp_dir, "cuerpo_correo.txt")
 
-        correoActualizarRequest = CorreoActualizarRequest(id=idCorreo)
-        respuestaActualizacion = update_email(urlApi, iniciarSesionResponse.token, correoActualizarRequest)
+        with open(file_txt, "w", encoding="utf-8") as file:
+            file.write(message.Body)
+
+        respuestaActualizacion = update_email(urlApi, iniciarSesionResponse.token, file_txt, idCorreo)
         if respuestaActualizacion == "OK":            
             logger.info(f"Se registro correctamente el correo: {message.Subject}")   
         else:
             notificaciones.append(NotificacionRequest(asunto=message.Subject, mensaje=respuestaActualizacion))
             logger.error(f"Error actualizando el correo: {message.Subject}")
-        
+ 
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)     
+
         message.UnRead = False
             
     if len(notificaciones) > 0:
         notificar_errores(urlApi, iniciarSesionResponse.token, email, notificaciones)
 
+ 
+    logger.info(f"Fin del proceso...")   
     time.sleep(5)
 
 except Exception as e:

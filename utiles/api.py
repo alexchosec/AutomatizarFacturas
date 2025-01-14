@@ -56,6 +56,7 @@ def save_email(url_api, token, request):
         url = f"{url_api}/api/FacturaProveedor/CorreoRecibidoRegistrar"
         
         respuesta = requests.post(url, data=json_data, headers=headers)
+        # respuesta = requests.post(url, json=request_data, headers=headers)
 
         if respuesta.status_code == 200:
             
@@ -71,26 +72,29 @@ def save_email(url_api, token, request):
     return response
 
 
-def update_email(url_api, token, request):
+def update_email(url_api, token, file_path, id_email):
     response = None
     try:
         
-        request_data = request.to_dict()
-
-        json_data = json.dumps(request_data)
-
         headers = {
-            'Content-Type': 'application/json',
+            "IdCorreo": str(id_email),
             "Authorization": f"Bearer {token}"
         }
 
-        url = f"{url_api}/api/FacturaProveedor/CorreoRecibidoActualizar"        
-        respuesta = requests.post(url, data=json_data, headers=headers)
+        if not os.path.exists(file_path):
+            logger.error(f"Archivo no encontrado: {file_path}")
+            return "Archivo no encontrado"
 
-        if respuesta.status_code == 200:           
-            response = "OK" 
-        else:           
-            response = f"Error al registrar correo: {respuesta.status_code} - {respuesta.text}"
+        with open(file_path, 'rb') as file:
+            
+            files = {'file': (os.path.basename(file_path), file, 'text/plain')}
+
+            respuesta = requests.post(f"{url_api}/api/FacturaProveedor/CorreoRecibidoActualizar", headers=headers, files=files)
+            
+            if respuesta.status_code == 200:
+                response = "OK"
+            else:                     
+                response = f"Error al registrar correo: {respuesta.status_code} - {respuesta.text}"
 
     except Exception as e:
         response = f"Error en la solicitud API: {e}"
