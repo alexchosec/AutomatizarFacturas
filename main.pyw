@@ -25,10 +25,14 @@ from utiles.common import decrypt_text
 from utiles.common import leer_settings
 from utiles.common import is_numeric
 from utiles.common import es_imagen_firma
+from utiles.common import limpiar_texto
+from utiles.common import validar_hora
+
+if not validar_hora():
+    exit()
 
 
 logger = setup_logging()
-
 
 # Credenciales 
 email = ""
@@ -66,7 +70,7 @@ else:
     email = address_entry.Address
 
 # email = email.split('@')[0]
-# email = "aaviles"
+email = "kimberly.canma"
 
 # logger.info(f"Carpeta principal: {inbox.Name}")
 
@@ -132,7 +136,8 @@ try:
             remitente_correo = message.Sender.GetExchangeUser().PrimarySmtpAddress
 
         
-        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=message.Subject, usuario=email)
+        subject = limpiar_texto(message.Subject)
+        correoRecibidoRequest = CorreoRecibidoRequest(remitente=remitente_correo, asunto=subject, usuario=email)
         respuestaGuardar = save_email(urlApi, iniciarSesionResponse.token, correoRecibidoRequest)
 
         if not is_numeric(respuestaGuardar):

@@ -5,6 +5,8 @@ import win32com.client
 import tempfile
 import requests
 import re
+
+from datetime import datetime
 from cryptography.fernet import Fernet
 
 
@@ -188,3 +190,21 @@ def es_imagen_firma(attachment):
         return True
     
     return False
+
+def limpiar_texto(texto: str) -> str:
+   
+    if not isinstance(texto, str):
+        raise ValueError("El argumento 'asunto' debe ser un string.")
+
+    nuevo_texto = re.sub(r'[^ -~]', '', texto)  
+
+    return nuevo_texto
+
+def validar_hora() -> bool:
+
+    hora_actual = datetime.now().time()
+
+    hora_inicio = datetime.strptime("09:00", "%H:%M").time()
+    hora_fin = datetime.strptime("21:00", "%H:%M").time()
+
+    return hora_inicio <= hora_actual <= hora_fin
