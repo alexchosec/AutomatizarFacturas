@@ -27,7 +27,7 @@ from utiles.common import is_numeric
 from utiles.common import es_imagen_firma
 from utiles.common import limpiar_texto
 from utiles.common import validar_hora
-
+# ok
 if not validar_hora():
     exit()
 
